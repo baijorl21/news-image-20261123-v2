@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Entry program for make.fun bounty news-image-20261123.
+"""news-image-20261123 entrypoint.
 
-The bounty asks for one image summing up the world news of Monday
-23 November 2026, written to /output/entry.png. The picture lives in this
-repository as entry.png (drawn from scratch by make_image.py with PIL);
-this program simply copies those exact bytes to the output path, so every
-run produces an identical file. Standard library only, no network.
+Drops the finished news picture into the grader's output folder. The
+picture itself ships in this repo as entry.png, painted by make_image.py;
+this script only moves those exact bytes to the output directory, so two
+runs always produce the same file. Nothing is downloaded and nothing else
+is needed beyond the standard library. Because the copy is byte for byte,
+the entry is deterministic: run it twice, get the same PNG both times.
 
-For a local test outside the grader's container, point MAKEFUN_OUTPUT_DIR
-at a scratch directory:
+Local check (outside the grader's container):
 
     mkdir -p out && MAKEFUN_OUTPUT_DIR=out python3 main.py
 """
@@ -18,15 +18,24 @@ import shutil
 import sys
 from pathlib import Path
 
+PICTURE_NAME = "entry.png"
+DEFAULT_OUTPUT = "/output"
+
+
+def output_path() -> Path:
+    """Where the grader expects the picture, creating the folder first."""
+    wanted = os.environ.get("MAKEFUN_OUTPUT_DIR", DEFAULT_OUTPUT)
+    folder = Path(wanted)
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder / PICTURE_NAME
+
 
 def main() -> None:
-    source = Path(__file__).resolve().parent / "entry.png"
-    if not source.is_file():
-        print(f"entry image missing: {source}", file=sys.stderr)
+    picture = Path(__file__).resolve().parent / PICTURE_NAME
+    if not picture.is_file():
+        print(f"entry image not found: {picture}", file=sys.stderr)
         raise SystemExit(1)
-    destination_dir = Path(os.environ.get("MAKEFUN_OUTPUT_DIR", "/output"))
-    destination_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(source, destination_dir / "entry.png")
+    shutil.copyfile(picture, output_path())
 
 
 if __name__ == "__main__":
